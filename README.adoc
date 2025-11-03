@@ -1,0 +1,375 @@
+= Perforce Klocwork scan and publish to Platform
+
+Use this action to analyze the source code for security vulnerabilities and quality defects using the Perforce Klocwork Static Application Security Testing (SAST) scanner.
+You can also use the action output as a quality gate for the next step or job in your workflow.
+
+Klocwork is a Static Application Security Testing (SAST) solution that helps organizations identify security vulnerabilities and quality issues in source code through deep static analysis.
+
+Add a Klocwork scan to your workflows in CloudBees platform to:
+
+* Detect security vulnerabilities and quality defects in source code.
+* Identify potential security flaws early in the development lifecycle.
+* Gain insight into code quality risks and how to fix issues.
+* Ensure compliance with industry standards such as OWASP, CWE, CERT, and MISRA.
+
+CloudBees platform enables you to run a Klocwork scan either implicitly or explicitly.
+
+== Explicit and implicit scan types
+
+An implicit scan is automatically triggered, and an explicit scan is one you configure to be invoked in a step of your workflow.
+To learn more about the differences between explicit and implicit scans, refer to link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/actions#security[Security scan actions].
+
+To set up implicit scanning, refer to link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/aspm/implicit-security-analysis[Code and binary security analysis].
+
+== Prerequisites
+
+Set up the CloudBees platform and GHA to work together, providing key features of the platform to GHA workflows. Refer to link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/github-actions/gha-getting-started[Getting started with GHA integration] for more information.
+
+== How the scanner works
+
+The Klocwork SAST scanner architectural components are:
+
+* Client-side: The Klocwork analysis engine and command-line tools (kwbuildproject, kwciagent).
+* Server-side: The Klocwork Server for centralized analysis results management.
+* Analysis engine: Proprietary static analysis engine with deep dataflow and control flow analysis capabilities.
+
+The scanning process is as follows:
+
+. The Klocwork build specification is created to capture the build configuration of your project.
+. Source code is analyzed on the client side using the Klocwork analysis engine.
+. The analysis results are uploaded to the Klocwork Server (if configured).
+. Security vulnerabilities and quality defects are identified based on enabled checkers and taxonomies.
+. Results are reported with severity levels, detailed descriptions, and remediation guidance.
+. The scan results are made available as actionable outputs for quality gates and downstream workflow steps.
+
+NOTE: For more information about the Perforce Klocwork SAST scanner, refer to the link:https://www.perforce.com/products/klocwork[Perforce Klocwork documentation].
+
+== Inputs
+
+[cols="2a,1a,1a,3a",options="header"]
+.Input details
+|===
+
+| Input name
+| Data type
+| Required?
+| Description
+
+| `url`
+| String
+| Yes
+| The Klocwork server URL.
+
+| `username`
+| String
+| Yes
+| Klocwork username.
+
+| `password`
+| String
+| No
+| Klocwork password.
+
+| `token`
+| String
+| No
+| Klocwork application token.
+
+| `build-tool`
+| String
+| Yes
+| Klocwork build tool [make / cmake / python/ maven / gradle / gradlew / dotnet].
+
+| `build-directory`
+| String
+| No
+| Klocwork build directory [default is root folder].
+
+| `ref`
+| String
+| Yes
+| Specify the ref to be checked out and scanned.
+
+| `build-name`
+| String
+| No
+| Klocwork build name.
+
+| `build-options`
+| String
+| No
+| Klocwork scan build options [e:g: make -j4].
+
+| `build-spec-file`
+| String
+| No
+| Klocwork build specification file path [e:g: /tmp/kwinject.out].
+
+| `enable-agent-scan`
+| Boolean
+| No
+| Enable Klocwork Agent Scan [default is full scan].
+
+| `license-host`
+| String
+| No
+| Klocwork license server hostname [default is server hostname].
+
+| `license-port`
+| String
+| No
+| Klocwork license server port [default is 27000].
+
+| `project-name`
+| String
+| No
+| Klocwork project name.
+
+| `scanTimeOut`
+| String
+| No
+| Klocwork scan waiting time in seconds [e:g: 3600].
+
+| `tables-directory`
+| String
+| No
+| Klocwork scan tables directory [e:g: /tmp/tables].
+
+| `workspace-dir`
+| String
+| No
+| The file path of the code to be scanned.
+
+|===
+
+NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specification file, the `build-options` parameter is mandatory. You must pass the appropriate build command with options. For example, if `make` is the build tool, the build options should be specified like `make targetName -j14` or similar build commands specific to your project configuration.
+
+== Outputs
+
+[cols="2a,1a,4a",options="header"]
+.Output details
+|===
+
+| Output name
+| Data type
+| Description
+
+| `critical-count`
+| String
+| The number of *Critical* severity issues discovered during the scan.
+
+| `high-count`
+| String
+| The number of *High* severity issues discovered during the scan.
+
+| `medium-count`
+| String
+| The number of *Medium* severity issues discovered during the scan.
+
+| `low-count`
+| String
+| The number of *Low* severity issues discovered during the scan.
+
+| `total-issues`
+| String
+| The total number of issues discovered during the scan.
+
+|===
+
+IMPORTANT: This action uses GitHub OIDC authentication to securely communicate with CloudBees platform.
+Be sure to set permissions to `id-token: write` in your workflow.
+
+== Usage examples
+
+The following is a basic example of using this action:
+
+In the following example, the link:https://help.klocwork.com/current/en-us/concepts/commandreference.htm[Klocwork
+command reference] provides detailed guidance on specifying `build-options` according to the `build-tool` used.
+For instance, if the `build-tool` is `make`, the `build-options` should include the build command and relevant flags,
+such as `make targetName -j14`, to ensure that `kwinject` can correctly generate the build specification file.
+
+[source,yaml]
+----
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Scan with Perforce Klocwork SAST scanner
+        uses: cloudbees-io-gha/perforce-klocwork-sast-publish@v1
+        with:
+          url: ${{ vars.KLOCWORK_URL }}
+          token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          username: ${{ vars.KLOCWORK_USERNAME }}
+          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
+          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+          ref: main
+
+----
+
+=== Using the action output
+
+You can use the output values from this action in downstream steps and jobs.
+The following example uses the action output in a downstream step of the same job:
+
+[source, yaml,role="default-expanded"]
+----
+name: my-workflow
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  klocwork-scan-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - id: klocwork-step
+        name: Perforce Klocwork Scan
+        uses: cloudbees-io-gha/perforce-klocwork-sast-publish@v1
+        with:
+          url: ${{ vars.KLOCWORK_URL }}
+          token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          username: ${{ vars.KLOCWORK_USERNAME }}
+          build-directory: ${{ vars.KLOCWORK_BUILD_DIR }}
+          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
+          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+
+      - name: Source dir examine
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/work" -w /work golang:1.20.3-alpine3.17 ls -latR /work
+
+      - id: print-outputs-from-klocwork-step
+        name: Print outputs from the upstream Perforce Klocwork Scan step
+        run: |
+          # Printing all outputs
+          echo "Outputs from upstream Perforce Klocwork Scan step:"
+          echo "Critical count: ${{ steps.klocwork-step.outputs.critical-count }}"
+          echo "Very high count: ${{ steps.klocwork-step.outputs.very-high-count }}"
+          echo "High count: ${{ steps.klocwork-step.outputs.high-count }}"
+          echo "Medium count: ${{ steps.klocwork-step.outputs.medium-count }}"
+          echo "Low count: ${{ steps.klocwork-step.outputs.low-count }}"
+----
+
+The following example uses the action output in a downstream job:
+
+[source, yaml,role="default-expanded"]
+----
+name: my-workflow
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  job1:
+    runs-on: ubuntu-latest
+    outputs:
+      klocwork-job-output-critical: ${{ steps.klocwork-step.outputs.critical-count }}
+      klocwork-job-output-very-high: ${{ steps.klocwork-step.outputs.very-high-count }}
+      klocwork-job-output-high: ${{ steps.klocwork-step.outputs.high-count }}
+      klocwork-job-output-medium: ${{ steps.klocwork-step.outputs.medium-count }}
+      klocwork-job-output-low: ${{ steps.klocwork-step.outputs.low-count }}
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - id: klocwork-step
+        name: Perforce Klocwork scan
+        uses: cloudbees-io-gha/perforce-klocwork-sast-publish@v1
+        with:
+          url: ${{ vars.KLOCWORK_URL }}
+          token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          username: ${{ vars.KLOCWORK_USERNAME }}
+          build-directory: ${{ vars.KLOCWORK_BUILD_DIR }}
+          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
+          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+
+      - name: Source dir examine
+        run: |
+          ls -latR ${GITHUB_WORKSPACE}
+
+  job2:
+    runs-on: ubuntu-latest
+    needs: job1
+    steps:
+      - id: print-outputs-from-job1
+        name: Print outputs from upstream job1
+        run: |
+          # Printing all outputs
+          echo "Outputs from upstream Perforce Klocwork Scan job:"
+          echo "Critical count: ${{ needs.job1.outputs.klocwork-job-output-critical }}"
+          echo "Very high count: ${{ needs.job1.outputs.klocwork-job-output-very-high }}"
+          echo "High count: ${{ needs.job1.outputs.klocwork-job-output-high }}"
+          echo "Medium count: ${{ needs.job1.outputs.klocwork-job-output-medium }}"
+          echo "Low count: ${{ needs.job1.outputs.klocwork-job-output-low }}"
+----
+
+=== Full workflow and run example
+
+The following GHA workflow example scans a repository with Perforce Klocwork SAST scanner.
+
+.Example GHA workflow YAML file
+[.collapsible]
+--
+
+[source, yaml,role="default-expanded"]
+----
+name: Perforce Klocwork scan workflow
+
+on:
+  push:
+    branches:
+    - main
+
+jobs:
+  klocwork-codescan:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Perforce Klocwork scan
+        uses: cloudbees-io-gha/perforce-klocwork-sast-publish@v1
+        with:
+          url: ${{ vars.KLOCWORK_URL }}
+          token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          username: ${{ vars.KLOCWORK_USERNAME }}
+          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
+          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+
+----
+--
+
+After the GHA run has completed, the security findings are collected and displayed in the link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/aspm/security-center[Security center] of the component containing the workflow.
+
+== License
+
+This code is made available under the
+link:https://opensource.org/license/mit/[MIT license].
+
+== References
+
+* Learn more about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/github-actions/intro[Using GitHub Actions with CloudBees platform].
+* Learn about link:https://docs.cloudbees.com/docs/cloudbees-platform/latest/[CloudBees platform].
+
+
+
+
+
+
