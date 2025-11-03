@@ -1,4 +1,4 @@
-name: 'Perforce Klocwork SAST scan and publish to Platform'
+name: 'Perforce Klocwork SAST scan and publish to Unify Platform'
 description: 'Runs Perforce Klocwork SAST scan to detect vulnerabilities and risks and publishes to the Unify platform.'
 
 inputs:
@@ -136,7 +136,7 @@ runs:
           -e KLOCWORK_BUILD_TOOL: ${{ inputs.build-tool}}
           -e KLOCWORK_BUILD_SPEC_FILE: ${{ inputs.build-spec-file}}
           -e KLOCWORK_TABLES_DIR: ${{ inputs.tables-directory}}
-          -e KLOCWORK_SCAN_TIMEOUT: ${{ inputs.scan-time-out}}
+          -e KLOCWORK_SCAN_TIMEOUT: ${{ inputs.scan-timeout}}
           -e KLOCWORK_BUILD_OPS: ${{ inputs.build-options}}
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
           --mode single
