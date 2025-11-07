@@ -2,6 +2,10 @@ name: 'Perforce Klocwork SAST scan and publish to Unify Platform'
 description: 'Runs Perforce Klocwork SAST scan to detect vulnerabilities and risks and publishes to the Unify platform.'
 
 inputs:
+  cloudbees-url: 
+    description: Cloudbees API URL
+    required: false
+    default: "https://api.cloudbees.io"
   enable-agent-scan:
     description: 'Specifies whether to enable the Klocwork Agent scan.'
     required: false
