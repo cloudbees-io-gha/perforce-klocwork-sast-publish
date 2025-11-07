@@ -128,22 +128,23 @@ runs:
       run: |
         docker run --rm \
           -u root \
-          -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE \
+          -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
           -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
           -e RUN_ID="${{ github.run_id }}" \
           -e JOB_ID="${{ github.job }}" \
           -e STEP_ID="${{ inputs.step-id }}" \
-          -e KLOCWORK_PROPS: '{"url": "${{ inputs.url }}" , "username": "${{ inputs.username }}", "password": "${{ inputs.password }}", "token": "${{ inputs.token }}", "enableAgentScan": "${{ inputs.enable-agent-scan }}", "licenseHost": "${{ inputs.license-host }}", "licensePort": "${{ inputs.license-port }}"}' \
-          -e KLOCWORK_PROJECT: ${{ inputs.project-name }} \
-          -e KLOCWORK_BUILD_NAME: ${{ inputs.build-name}} \
-          -e KLOCWORK_BUILD_DIR: ${{ inputs.build-directory}} \
-          -e KLOCWORK_BUILD_TOOL: ${{ inputs.build-tool}} \
-          -e KLOCWORK_BUILD_SPEC_FILE: ${{ inputs.build-spec-file}} \
-          -e KLOCWORK_TABLES_DIR: ${{ inputs.tables-directory}} \
-          -e KLOCWORK_SCAN_TIMEOUT: ${{ inputs.scan-timeout}} \
-          -e KLOCWORK_BUILD_OPS: ${{ inputs.build-options}} \
+          -e KLOCWORK_PROPS='{"url": "${{ inputs.url }}", "username": "${{ inputs.username }}", "password": "${{ inputs.password }}", "token": "${{ inputs.token }}", "enableAgentScan": "${{ inputs.enable-agent-scan }}", "licenseHost": "${{ inputs.license-host }}", "licensePort": "${{ inputs.license-port }}"}' \
+          -e KLOCWORK_PROJECT="${{ inputs.project-name }}" \
+          -e KLOCWORK_BUILD_NAME="${{ inputs.build-name }}" \
+          -e KLOCWORK_BUILD_DIR="${{ inputs.build-directory }}" \
+          -e KLOCWORK_BUILD_TOOL="${{ inputs.build-tool }}" \
+          -e KLOCWORK_BUILD_SPEC_FILE="${{ inputs.build-spec-file }}" \
+          -e KLOCWORK_TABLES_DIR="${{ inputs.tables-directory }}" \
+          -e KLOCWORK_SCAN_TIMEOUT="${{ inputs.scan-timeout }}" \
+          -e KLOCWORK_BUILD_OPS="${{ inputs.build-options }}" \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
           --mode single
+
         
     - id: process-outputs
       name: Complete execution plan
