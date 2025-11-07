@@ -97,7 +97,7 @@ runs:
         touch "$FILE_PATH"
         echo "File created at: $FILE_PATH"
         
-    - name: Generate reference files
+    - name: Generate reference files 
       shell: bash
       run: |
         docker run --rm \
@@ -106,7 +106,7 @@ runs:
           -e INPUT_RUN_ID="${{ github.run_id }}" \
           -e INPUT_IS_GITHUB_WORKFLOW="true" \
           -e GITHUB_RUN_ID="${{ github.run_id }}" \
-          -e GITHUB_WORKFLOW_REF="$GITHUB_WORKFLOW_REF" \
+          -e GITHUB_WORKFLOW_REF="${{ github.workflow_ref }}" \
           -e GITHUB_RUN_ATTEMPT="${{ github.run_attempt }}" \
           -e GITHUB_RUN_NUMBER="${{ github.run_number }}" \
           -e GITHUB_REF_NAME="${{ github.ref_name }}" \
@@ -114,10 +114,10 @@ runs:
           -e GITHUB_SERVER_URL="${{ github.server_url }}/${{ github.repository }}" \
           -e GITHUB_JOB="${{ github.job }}" \
           -e GITHUB_PROVIDER="GITHUB" \
-          -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
-          -e GITHUB_ENV="$GITHUB_ENV" \
+          -e GITHUB_WORKSPACE="${{ github.workspace }}" \
           -v $GITHUB_OUTPUT:$GITHUB_OUTPUT \
           -e GITHUB_OUTPUT="$GITHUB_OUTPUT" \
+          -e GITHUB_ENV="$GITHUB_ENV" \
           -e ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN \
           -e ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL \
           public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4 \
