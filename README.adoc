@@ -135,6 +135,21 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 | No
 | Klocwork scan tables directory [e:g: /tmp/tables].
 
+| `enable-local-scan`
+| Boolean
+| No
+| Enable Klocwork Local Scan.
+
+| `build-project-options`
+| String
+| No
+| Klocwork build project analysis command options.
+
+| `load-result-options`
+| String
+| No
+| Klocwork scan load results command options.
+
 | `workspace-dir`
 | String
 | No
