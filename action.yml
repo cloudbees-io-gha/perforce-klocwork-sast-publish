@@ -151,9 +151,9 @@ runs:
           -e KLOCWORK_TABLES_DIR="${{ inputs.tables-directory }}" \
           -e KLOCWORK_SCAN_TIMEOUT="${{ inputs.scan-timeout }}" \
           -e KLOCWORK_BUILD_OPS="${{ inputs.build-options }}" \
-          -e KLOCWORK_LOCAL_SCAN: ${{ inputs.enable-local-scan}}
-          -e KLOCWORK_BUILD_PROJECT_OPS: ${{ inputs.build-project-options}}
-          -e KLOCWORK_LOAD_RESULTS_OPS: ${{ inputs.load-result-options}}
+          -e KLOCWORK_LOCAL_SCAN: ${{ inputs.enable-local-scan}} \
+          -e KLOCWORK_BUILD_PROJECT_OPS: ${{ inputs.build-project-options}} \
+          -e KLOCWORK_LOAD_RESULTS_OPS: ${{ inputs.load-result-options}} \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
           --mode single
 
