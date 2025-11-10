@@ -125,7 +125,7 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 | No
 | Klocwork project name.
 
-| `scanTimeOut`
+| `scan-timeout`
 | String
 | No
 | Klocwork scan waiting time in seconds [e:g: 3600].

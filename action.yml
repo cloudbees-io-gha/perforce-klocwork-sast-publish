@@ -51,6 +51,15 @@ inputs:
   scan-timeout:
     description: 'Maximum scan duration, in seconds, before timing out.'
     required: false
+  enable-local-scan:
+    description: 'Enable Klocwork Local Scan'
+    required: false
+  build-project-options:
+    description: 'Klocwork scan build project command options'
+    required: false
+  load-result-options:
+    description: 'Klocwork scan load results command options'
+    required: false
   ref:
     description: 'Flag to indicate the ref that should be archived (same as supplied to checkout).'
     required: false
@@ -142,6 +151,9 @@ runs:
           -e KLOCWORK_TABLES_DIR="${{ inputs.tables-directory }}" \
           -e KLOCWORK_SCAN_TIMEOUT="${{ inputs.scan-timeout }}" \
           -e KLOCWORK_BUILD_OPS="${{ inputs.build-options }}" \
+          -e KLOCWORK_LOCAL_SCAN: ${{ inputs.enable-local-scan}}
+          -e KLOCWORK_BUILD_PROJECT_OPS: ${{ inputs.build-project-options}}
+          -e KLOCWORK_LOAD_RESULTS_OPS: ${{ inputs.load-result-options}}
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
           --mode single
 
