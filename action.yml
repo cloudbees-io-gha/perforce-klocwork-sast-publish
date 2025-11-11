@@ -1,0 +1,188 @@
+name: 'Perforce Klocwork SAST scan and publish to Unify Platform'
+description: 'Runs Perforce Klocwork SAST scan to detect vulnerabilities and risks and publishes to the Unify platform.'
+
+inputs:
+  cloudbees-url: 
+    description: Cloudbees API URL
+    required: false
+    default: "https://api.cloudbees.io"
+  enable-agent-scan:
+    description: 'Specifies whether to enable the Klocwork Agent scan.'
+    required: false
+  url:
+    description: 'URL of the Klocwork server instance.'
+    required: true
+  license-host:
+    description: 'Hostname of the Klocwork license server.'
+    required: false
+  license-port:
+    description: 'Port number used by the Klocwork license server.'
+    required: false
+  username:
+    description: 'Username for authenticating with the Klocwork server.'
+    required: true
+  token:
+    description: 'Application token used for Klocwork authentication.'
+    required: false
+  password:
+    description: 'Password for the specified Klocwork user account.'
+    required: false
+  project-name:
+    description: 'Name of the Klocwork project to be analyzed.'
+    required: false
+  build-name:
+    description: 'Unique name identifying the Klocwork analysis build for the project.'
+    required: false
+  build-directory:
+    description: 'Path to the directory containing the source code to be scanned.'
+    required: false
+  build-tool:
+    description: 'Build tool used to compile the source code.'
+    required: true
+  build-spec-file:
+    description: 'Path to the Klocwork build specification file.'
+    required: false
+  tables-directory:
+    description: 'Path to the Klocwork project tables directory used during the scan.'
+    required: false
+  build-options:
+    description: 'Additional options or parameters passed to the build tool during analysis.'
+    required: false
+  scan-timeout:
+    description: 'Maximum scan duration, in seconds, before timing out.'
+    required: false
+  enable-local-scan:
+    description: 'Enable Klocwork Local Scan'
+    required: false
+  build-project-options:
+    description: 'Klocwork scan build project command options'
+    required: false
+  load-result-options:
+    description: 'Klocwork scan load results command options'
+    required: false
+  ref:
+    description: 'Flag to indicate the ref that should be archived (same as supplied to checkout).'
+    required: false
+    default: ''
+  workspace-dir:
+    description: 'Flag to mention the path where the checked out code will be present.'
+    required: false
+    default: ''
+  step-id:
+    description: 'The ID of the step in the workflow'
+    required: false
+    default: ''
+outputs:
+  critical-count:
+    description: A string containing the number of Critical security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.critical-count}}
+  very-high-count:
+    description: A string containing the number of Very High security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.very-high-count}}
+  high-count:
+    description: A string containing the number of High security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.high-count}}
+  medium-count:
+    description: A string containing the number of Medium security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.medium-count}}
+  low-count:
+    description: A string containing the number of Low security findings discovered during the scan.
+    value: ${{steps.process-outputs.outputs.low-count}}
+
+runs:
+  using: composite
+  steps:
+
+    - name: Create tar of source code
+      shell: bash
+      run: |
+        tar -cvf output.tar .
+
+    - name: Create request JSON file in workspace
+      shell: bash
+      run: |
+        FILE_PATH="$GITHUB_WORKSPACE/store/request/request.json"
+        mkdir -p "$(dirname "$FILE_PATH")"
+        touch "$FILE_PATH"
+        echo "File created at: $FILE_PATH"
+        
+    - name: Generate reference files 
+      shell: bash
+      run: |
+        docker run --rm \
+          -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE \
+          -e INPUT_CLOUDBEES_API_URL="${{ inputs.cloudbees-url }}" \
+          -e INPUT_RUN_ID="${{ github.run_id }}" \
+          -e INPUT_IS_GITHUB_WORKFLOW="true" \
+          -e GITHUB_RUN_ID="${{ github.run_id }}" \
+          -e GITHUB_WORKFLOW_REF="${{ github.workflow_ref }}" \
+          -e GITHUB_RUN_ATTEMPT="${{ github.run_attempt }}" \
+          -e GITHUB_RUN_NUMBER="${{ github.run_number }}" \
+          -e GITHUB_REF_NAME="${{ github.ref_name }}" \
+          -e GITHUB_REPOSITORY="${{ github.repository }}" \
+          -e GITHUB_SERVER_URL="${{ github.server_url }}/${{ github.repository }}" \
+          -e GITHUB_JOB="${{ github.job }}" \
+          -e GITHUB_PROVIDER="GITHUB" \
+          -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+          -v $GITHUB_OUTPUT:$GITHUB_OUTPUT \
+          -e GITHUB_OUTPUT="$GITHUB_OUTPUT" \
+          -e GITHUB_ENV="$GITHUB_ENV" \
+          -e ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+          -e ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL \
+          public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4 \
+          generate-references --asset-type "CODE"
+
+    - name: Run perforce klocwork sast plugin
+      shell: bash
+      run: |
+        docker run --rm \
+          -u root \
+          -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
+          -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
+          -e RUN_ID="${{ github.run_id }}" \
+          -e JOB_ID="${{ github.job }}" \
+          -e STEP_ID="${{ inputs.step-id }}" \
+          -e KLOCWORK_PROPS='{"url": "${{ inputs.url }}", "username": "${{ inputs.username }}", "password": "${{ inputs.password }}", "token": "${{ inputs.token }}", "enableAgentScan": "${{ inputs.enable-agent-scan }}", "licenseHost": "${{ inputs.license-host }}", "licensePort": "${{ inputs.license-port }}"}' \
+          -e KLOCWORK_PROJECT="${{ inputs.project-name }}" \
+          -e KLOCWORK_BUILD_NAME="${{ inputs.build-name }}" \
+          -e KLOCWORK_BUILD_DIR="${{ inputs.build-directory }}" \
+          -e KLOCWORK_BUILD_TOOL="${{ inputs.build-tool }}" \
+          -e KLOCWORK_BUILD_SPEC_FILE="${{ inputs.build-spec-file }}" \
+          -e KLOCWORK_TABLES_DIR="${{ inputs.tables-directory }}" \
+          -e KLOCWORK_SCAN_TIMEOUT="${{ inputs.scan-timeout }}" \
+          -e KLOCWORK_BUILD_OPS="${{ inputs.build-options }}" \
+          -e KLOCWORK_LOCAL_SCAN: ${{ inputs.enable-local-scan}} \
+          -e KLOCWORK_BUILD_PROJECT_OPS: ${{ inputs.build-project-options}} \
+          -e KLOCWORK_LOAD_RESULTS_OPS: ${{ inputs.load-result-options}} \
+          public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
+          --mode single
+
+        
+    - id: process-outputs
+      name: Complete execution plan
+      shell: bash
+      run: |
+        docker run --rm \
+          -v $GITHUB_WORKSPACE:$GITHUB_WORKSPACE \
+          -e INPUT_CLOUDBEES_API_URL="${{ inputs.cloudbees-url }}" \
+          -e INPUT_RUN_ID="${{ github.run_id }}" \
+          -e INPUT_IS_GITHUB_WORKFLOW="true" \
+          -e GITHUB_RUN_ID="${{ github.run_id }}" \
+          -e GITHUB_WORKFLOW_REF="$GITHUB_WORKFLOW_REF" \
+          -e GITHUB_RUN_ATTEMPT="${{ github.run_attempt }}" \
+          -e GITHUB_RUN_NUMBER="${{ github.run_number }}" \
+          -e GITHUB_REF_NAME="${{ github.ref_name }}" \
+          -e GITHUB_REPOSITORY="${{ github.repository }}" \
+          -e GITHUB_SERVER_URL="${{ github.server_url }}/${{ github.repository }}" \
+          -e GITHUB_JOB="${{ github.job }}" \
+          -e GITHUB_PROVIDER="GITHUB" \
+          -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
+          -e GITHUB_ENV="$GITHUB_ENV" \
+          -v $GITHUB_OUTPUT:$GITHUB_OUTPUT \
+          -e GITHUB_OUTPUT="$GITHUB_OUTPUT" \
+          -e ACTIONS_ID_TOKEN_REQUEST_TOKEN=$ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+          -e ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL \
+          public.ecr.aws/l7o7z1g8/actions/assets-plugin-chain-utils:1f95fd45dd03fa6f363ff95cb20142fe4b7d83c4 \
+          process-outputs
+      
+        
