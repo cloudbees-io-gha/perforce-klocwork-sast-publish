@@ -144,28 +144,10 @@ runs:
     - name: Run perforce klocwork sast plugin
       shell: bash
       run: |
-        # Detect OpenSSL location
-        if [[ "$OSTYPE" == "darwin"* ]]; then
-          OPENSSL_PATH=$(brew --prefix openssl)
-        else
-          OPENSSL_PATH="/usr"
-        fi
-
         docker run --rm \
           -u root \
           -v "$GITHUB_WORKSPACE:$GITHUB_WORKSPACE" \
-          -v "$OPENSSL_PATH:/usr/local/openssl:ro" \
           -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
-          -e LD_LIBRARY_PATH="/usr/local/openssl/lib" \
-          -e OPENSSL_ROOT_DIR="/usr/local/openssl" \
-          -e OPENSSL_INCLUDE_DIR="/usr/local/openssl/include" \
-          -e OPENSSL_CRYPTO_LIBRARY="/usr/local/openssl/lib" \
-          -e OPENSSL_SSL_LIBRARY="/usr/local/openssl/lib" \
-          -e CFLAGS="-I/usr/local/openssl/include" \
-          -e CXXFLAGS="-I/usr/local/openssl/include" \
-          -e LDFLAGS="-L/usr/local/openssl/lib" \
-          -e C_INCLUDE_PATH="/usr/local/openssl/include" \
-          -e CPLUS_INCLUDE_PATH="/usr/local/openssl/include" \
           -e RUN_ID="${{ github.run_id }}" \
           -e JOB_ID="${{ github.job }}" \
           -e STEP_ID="${{ inputs.step-id }}" \
@@ -181,8 +163,9 @@ runs:
           -e KLOCWORK_LOCAL_SCAN="${{ inputs.enable-local-scan }}" \
           -e KLOCWORK_BUILD_PROJECT_OPS="${{ inputs.build-project-options }}" \
           -e KLOCWORK_LOAD_RESULTS_OPS="${{ inputs.load-result-options }}" \
+          --entrypoint /bin/sh \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
-          --mode single
+          -c "apk add --no-cache openssl openssl-dev && exec /entrypoint.sh --mode single"
 
 
     - id: process-outputs
