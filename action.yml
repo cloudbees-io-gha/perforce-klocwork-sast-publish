@@ -157,6 +157,15 @@ runs:
           -v "$OPENSSL_PATH:/usr/local/openssl:ro" \
           -e GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
           -e LD_LIBRARY_PATH="/usr/local/openssl/lib" \
+          -e OPENSSL_ROOT_DIR="/usr/local/openssl" \
+          -e OPENSSL_INCLUDE_DIR="/usr/local/openssl/include" \
+          -e OPENSSL_CRYPTO_LIBRARY="/usr/local/openssl/lib" \
+          -e OPENSSL_SSL_LIBRARY="/usr/local/openssl/lib" \
+          -e CFLAGS="-I/usr/local/openssl/include" \
+          -e CXXFLAGS="-I/usr/local/openssl/include" \
+          -e LDFLAGS="-L/usr/local/openssl/lib" \
+          -e C_INCLUDE_PATH="/usr/local/openssl/include" \
+          -e CPLUS_INCLUDE_PATH="/usr/local/openssl/include" \
           -e RUN_ID="${{ github.run_id }}" \
           -e JOB_ID="${{ github.job }}" \
           -e STEP_ID="${{ inputs.step-id }}" \
