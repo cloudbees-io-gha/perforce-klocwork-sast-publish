@@ -165,7 +165,7 @@ runs:
           -e KLOCWORK_LOAD_RESULTS_OPS="${{ inputs.load-result-options }}" \
           --entrypoint /bin/bash \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
-          -c "apt-get update && apt-get install -y openssl libssl-dev && exec /entrypoint.sh --mode single"
+          -c "apt-get update && apt-get install -y openssl libssl-dev  --mode single"
 
 
     - id: process-outputs
