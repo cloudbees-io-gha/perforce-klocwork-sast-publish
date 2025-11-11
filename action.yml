@@ -163,9 +163,9 @@ runs:
           -e KLOCWORK_LOCAL_SCAN="${{ inputs.enable-local-scan }}" \
           -e KLOCWORK_BUILD_PROJECT_OPS="${{ inputs.build-project-options }}" \
           -e KLOCWORK_LOAD_RESULTS_OPS="${{ inputs.load-result-options }}" \
-          --entrypoint /bin/sh \
+          --entrypoint /bin/bash \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
-          -c "apk add --no-cache openssl openssl-dev && exec /entrypoint.sh --mode single"
+          -c "apt-get update && apt-get install -y openssl libssl-dev && exec /entrypoint.sh --mode single"
 
 
     - id: process-outputs
