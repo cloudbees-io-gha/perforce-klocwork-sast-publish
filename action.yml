@@ -164,10 +164,10 @@ runs:
           -e KLOCWORK_BUILD_PROJECT_OPS="${{ inputs.build-project-options }}" \
           -e KLOCWORK_LOAD_RESULTS_OPS="${{ inputs.load-result-options }}" \
           -e MALLOC=libc \
+          -e SHELL=/bin/bash \
           --entrypoint /bin/bash \
           public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:fdb53c7fd3c1e8c795c2796e7414edbada9b6113 \
-           -c "apt-get update && apt-get install -y openssl libssl-dev zlib1g-dev pkg-config build-essential && find /app/tmp-source* -type f -name '*.sh' -exec chmod +x {} \; 2>/dev/null || true && /app/plugin-klocwork-scanner --mode single"
-
+          -c "apt-get update && apt-get install -y openssl libssl-dev zlib1g-dev pkg-config build-essential bash && /app/plugin-klocwork-scanner --mode single"
 
     - id: process-outputs
       name: Complete execution plan
