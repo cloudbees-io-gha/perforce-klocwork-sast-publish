@@ -1,7 +1,7 @@
 = Perforce Klocwork scan and publish to Platform
 
 Use this action to analyze the source code for security vulnerabilities and quality defects using the Perforce Klocwork Static Application Security Testing (SAST) scanner.
-You can also use the action output as a quality gate for the next step or job in your workflow.
+The action output can be used as a quality gate in subsequent GitHub Actions steps or jobs.
 
 Klocwork is a Static Application Security Testing (SAST) solution that helps organizations identify security vulnerabilities and quality issues in source code through deep static analysis.
 
@@ -78,12 +78,12 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 | `build-tool`
 | String
 | Yes
-| Klocwork build tool [make / cmake / python/ maven / gradle / gradlew / dotnet].
+| Klocwork build tool [make / cmake / python/ maven / dotnet].
 
 | `build-directory`
 | String
 | No
-| Klocwork build directory [default is root folder].
+| Klocwork build directory [default is root folder /].
 
 | `ref`
 | String
@@ -98,12 +98,12 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 | `build-options`
 | String
 | No
-| Klocwork scan build options [e:g: make -j4].
+| Klocwork scan build options [e.g., make <target-name> -j4].
 
 | `build-spec-file`
 | String
 | No
-| Klocwork build specification file path [e:g: /tmp/kwinject.out].
+| Klocwork build specification file path [e.g., /tmp/kwinject.out].
 
 | `enable-agent-scan`
 | Boolean
@@ -128,27 +128,27 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 | `scan-timeout`
 | String
 | No
-| Klocwork scan waiting time in seconds [e:g: 3600].
+| Klocwork scan waiting time in seconds [e.g., 3600].
 
 | `tables-directory`
 | String
 | No
-| Klocwork scan tables directory [e:g: /tmp/tables].
+| Klocwork scan tables directory [e.g., /tmp/tables].
 
 | `enable-local-scan`
 | Boolean
 | No
-| Enable Klocwork Local Scan.
+| Enable Klocwork Local Scan [performs analysis locally on the agent only and does not push results to the Klocwork Server].
 
 | `build-project-options`
 | String
 | No
-| Klocwork build project analysis command options.
+| Klocwork `kwbuildproject`  command-line options.
 
 | `load-result-options`
 | String
 | No
-| Klocwork scan load results command options.
+| Klocwork `kwadmin load` results command-line options.
 
 | `workspace-dir`
 | String
@@ -157,7 +157,7 @@ NOTE: For more information about the Perforce Klocwork SAST scanner, refer to th
 
 |===
 
-NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specification file, the `build-options` parameter is mandatory. You must pass the appropriate build command with options. For example, if `make` is the build tool, the build options should be specified like `make targetName -j14` or similar build commands specific to your project configuration.
+NOTE: For C/C++/.NET projects, since `kwinject` is used for building the specification file, the `build-options` parameter is mandatory. You must pass the appropriate build command with options. For example, if `make` is the build tool, the `build-options` should be specified like `make targetName -j14` or similar build commands specific to your project configuration.
 
 == Outputs
 
@@ -214,10 +214,14 @@ such as `make targetName -j14`, to ensure that `kwinject` can correctly generate
         with:
           url: ${{ vars.KLOCWORK_URL }}
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
-          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
-          ref: main
+          project-name: test-project-redis
+          build-directory: /
+          build-tool: make
+          build-options: --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          enable-agent-scan: false
+          enable-local-scan: false
 
 ----
 
@@ -252,10 +256,14 @@ jobs:
         with:
           url: ${{ vars.KLOCWORK_URL }}
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          build-directory: ${{ vars.KLOCWORK_BUILD_DIR }}
-          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
-          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+          project-name: test-project-redis
+          build-directory: /
+          build-tool: make
+          build-options:  --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          enable-agent-scan: false
+          enable-local-scan: true
 
       - name: Source dir examine
         run: |
@@ -308,7 +316,7 @@ jobs:
           url: ${{ vars.KLOCWORK_URL }}
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          build-directory: ${{ vars.KLOCWORK_BUILD_DIR }}
+          build-directory: path/to/work/directory
           build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
           build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
 
@@ -342,31 +350,72 @@ The following GHA workflow example scans a repository with Perforce Klocwork SAS
 
 [source, yaml,role="default-expanded"]
 ----
-name: Perforce Klocwork scan workflow
+name: Perforce Klocwork scan
 
 on:
   push:
     branches:
-    - main
+     - klocwork-test
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   klocwork-codescan:
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: read
+    runs-on:
+     ubuntu-latest
+    outputs:
+      klocwork-job-output-critical: ${{ steps.klocwork-step.outputs.critical-count }}
+      klocwork-job-output-very-high: ${{ steps.klocwork-step.outputs.very-high-count }}
+      klocwork-job-output-high: ${{ steps.klocwork-step.outputs.high-count }}
+      klocwork-job-output-medium: ${{ steps.klocwork-step.outputs.medium-count }}
+      klocwork-job-output-low: ${{ steps.klocwork-step.outputs.low-count }}
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
 
-      - name: Perforce Klocwork scan
+      # Checkout code
+      - name: Checkout repository code
+        uses: actions/checkout@v4
+
+      # Print run info
+      - name: Print run info
+        shell: bash
+        run: |
+          echo "Ref name is $GITHUB_RUN_ID"
+          echo "Source is ${{ github.server_url }}/${{ github.repository }}"
+          echo "Subject is $GITHUB_WORKFLOW_REF|${{ github.run_id }}|${{ github.run_attempt }}|${{ github.run_number }}"
+          echo "Job is $GITHUB_JOB"
+
+      # Run Klocwork scan
+      - name: Klocwork scan
+        id: klocwork-step
         uses: cloudbees-io-gha/perforce-klocwork-sast-publish@v1
         with:
           url: ${{ vars.KLOCWORK_URL }}
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
+          license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          build-tool: ${{ vars.KLOCWORK_BUILD_TOOL }}
-          build-options: ${{ vars.KLOCWORK_BUILD_OPS }}
+          project-name: test-make-gha-redis
+          build-directory: /
+          build-tool: make
+          build-options:  --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          enable-agent-scan: false
+          enable-local-scan: true
+
+      - name: Source dir examine
+        run: |
+          docker run --rm -v "${{ github.workspace }}:/work" -w /work golang:1.20.3-alpine3.17 ls -latR /work
+
+      - id: print-outputs-from-klocwork-step
+        name: Print outputs from the upstream Perforce Klocwork Scan step
+        run: |
+          # Printing all outputs
+          echo "Outputs from upstream Perforce Klocwork Scan step:"
+          echo "Critical count: ${{ steps.klocwork-step.outputs.critical-count }}"
+          echo "Very high count: ${{ steps.klocwork-step.outputs.very-high-count }}"
+          echo "High count: ${{ steps.klocwork-step.outputs.high-count }}"
+          echo "Medium count: ${{ steps.klocwork-step.outputs.medium-count }}"
+          echo "Low count: ${{ steps.klocwork-step.outputs.low-count }}"
 
 ----
 --
