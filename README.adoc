@@ -216,10 +216,10 @@ such as `make targetName -j14`, to ensure that `kwinject` can correctly generate
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
           license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          project-name: test-project-redis
+          project-name: test-c-project
           build-directory: /
           build-tool: make
-          build-options: --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          build-options:  make clean <target-name> --ignore-errors
           enable-agent-scan: false
           enable-local-scan: false
 
@@ -258,10 +258,10 @@ jobs:
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
           license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          project-name: test-project-redis
+          project-name: test-c-project
           build-directory: /
           build-tool: make
-          build-options:  --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          build-options:   make  clean <targetName> --ignore-errors
           enable-agent-scan: false
           enable-local-scan: true
 
@@ -395,10 +395,10 @@ jobs:
           token: ${{ secrets.KLOCWORK_APP_TOKEN }}
           license-host: ${{ vars.KLOCWORK_LICENSE }}
           username: ${{ vars.KLOCWORK_USERNAME }}
-          project-name: test-make-gha-redis
+          project-name: test-c-project
           build-directory: /
           build-tool: make
-          build-options:  --ignore-files *foo.c make MALLOC=libc clean all --ignore-errors
+          build-options:  make clean <targetName> --ignore-errors
           enable-agent-scan: false
           enable-local-scan: true
 
