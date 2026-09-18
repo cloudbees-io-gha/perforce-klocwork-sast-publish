@@ -154,7 +154,7 @@ runs:
           -e KLOCWORK_LOCAL_SCAN="${{ inputs.enable-local-scan}}" \
           -e KLOCWORK_BUILD_PROJECT_OPS="${{ inputs.build-project-options}}" \
           -e KLOCWORK_LOAD_RESULTS_OPS="${{ inputs.load-result-options}}" \
-          public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:0e60a718ea67564bc373daf96a86778e9f053489 \
+          public.ecr.aws/l7o7z1g8/actions/assets-klocwork-scanner:3773435041acff15ea0d55d0700e8018e9cb09c9 \
           --mode single
 
         
